@@ -141,6 +141,7 @@ class Bot:
         commands = [None for _ in range(len(self.agents))]
         commands = self.return_gold(self.agents, commands)
         commands = self.shoot(self.agents, commands)
+        commands = self.mine(self.agents, commands)
         commands = self.go_to_gold(self.agents, commands)
         if self.map.count_on_board(Tile.FOG) / (self.map.n ** 2) > (1 / self.n_players) * Bot.EXPLORE:
             commands = self.explore(self.agents, commands)
