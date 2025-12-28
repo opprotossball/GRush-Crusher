@@ -13,6 +13,7 @@ class Map:
         self.board[my_base[0]][my_base[1]] = Tile.MY_BASE
         for enemy_base in enemy_bases:
             self.board[enemy_base[0]][enemy_base[1]] = Tile.ENEMY_BASE
+        self.agent_board = [[Tile.EMPTY for _ in range(n)] for _ in range(n)]
 
     @staticmethod
     def dist(cords1, cords2):
@@ -72,18 +73,24 @@ class Map:
     # add agent's vision
     def update(self, agents):
         # remove agents from map
-        for row in range(self.n):
-            for col in range(self.n):
-                if self.board[row][col] in [Tile.ALLY, Tile.ENEMY]:
-                    self.board[row][col] = Tile.EMPTY
+        self.agent_board = [[Tile.EMPTY for _ in range(self.n)] for _ in range(self.n)]
         # add agents and their visions
         for agent in agents:
-            self.board[agent.row][agent.col] = Tile.ALLY
+            # set agent on agent board
+            self.agent_board[agent.row][agent.col] = Tile.ALLY
+            # remove fog from agents tile
+            if self.board[agent.row][agent.col] == Tile.FOG:
+                self.board[agent.row][agent.col] = Tile.EMPTY
+            # calculate vision
             vision_line = self.line_cords(agent.row, agent.col, agent.rot, agent.vision.dist)
             for row, col in vision_line[:-1]:
                 self.board[row][col] = Tile.EMPTY
             last_row, last_col = vision_line[-1]
-            self.board[last_row][last_col] = agent.vision.tile
+            tile = agent.vision.tile
+            if tile in [Tile.ALLY, Tile.ENEMY]:
+                self.agent_board[last_row][last_col] = tile
+            else:
+                self.board[last_row][last_col] = tile
 
     def random_cords(self):
         return (random.randint(0, self.n-1), random.randint(0, self.n-1))

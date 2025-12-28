@@ -86,6 +86,10 @@ class Bot:
         else:
             raise Exception("bfs returned trash")
         if agent.rot == rot:
+            if self.map.agent_board[next_step[0]][next_step[1]] != Tile.EMPTY:
+                # stall if blocked
+                return None
+            self.map.agent_board[next_step[0]][next_step[1]] = Tile.RESERVED
             return Command.GO
         return agent.calculate_rotation(rot)
     
@@ -93,12 +97,13 @@ class Bot:
     def default(self, agents, commands):
         for id, agent in enumerate(agents):
             if commands[id] is None:
-                commands[id] = random.choice([Command.LEFT, Command.RIGHT, Command.BACK])            
+                commands[id] = random.choice([Command.GO, Command.LEFT, Command.RIGHT, Command.BACK])            
         return commands
 
     # only explore
     def command(self):
         commands = [None for _ in range(len(self.agents))]
+        commands = self.shoot(self.agents, commands)
         commands = self.explore(self.agents, commands)
         commands = self.default(self.agents, commands)
         return commands
