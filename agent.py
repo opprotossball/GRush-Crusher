@@ -40,7 +40,8 @@ class Agent:
             vision = Vision(
                 tile=Tile.from_string(data[2]),
                 dist=int(data[3]),
-            )
+            ),
+            has_gold=int(data[5]) == 1,
         )
         return agent
         

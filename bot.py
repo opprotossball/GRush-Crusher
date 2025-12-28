@@ -2,9 +2,13 @@ from map import Map
 from utils import Tile, Rotation, Command
 from agent import Agent
 import random
+import logging
 
 
 class Bot:
+    EXPLORE = 1.5
+    MINERS = 0.2
+    
     def __init__(self, n, game_length, n_players, my_base, enemy_bases):
         self.n = n
         self.game_length = game_length
@@ -13,6 +17,7 @@ class Bot:
         self.enemy_bases = enemy_bases
         self.map = Map(n, my_base, enemy_bases)
         self.agents = []
+        self.camp_locations = []
         
     def update(self, agents):
         self.agents = agents
@@ -53,6 +58,22 @@ class Bot:
         return commands
 
     # go to base if holding gold
+    def go_to_gold(self, agents, commands):
+        miners = 0
+        for id, agent in enumerate(agents):
+            if miners > len(agents) * Bot.MINERS:
+                break
+            if commands[id] is not None or agent.has_gold:
+                continue
+            cords, dist = self.map.find_closest(agent.row, agent.col, Tile.GOLD)
+            # if cannot find fog command stays None
+            if cords is None:
+                continue
+            commands[id] = self.go(agent, cords)
+            miners += 1
+        return commands
+    
+    # return gold
     def return_gold(self, agents, commands):
         for id, agent in enumerate(agents):
             if commands[id] is not None:
@@ -100,11 +121,29 @@ class Bot:
                 commands[id] = random.choice([Command.GO, Command.LEFT, Command.RIGHT, Command.BACK])            
         return commands
 
+    # go to camp locations
+    def go_to_camp(self, agents, commands):
+        pass
+    
+    # stay in camp locations
+    def hold_position(self, agents, commands):
+        for id, agent in enumerate(agents):
+            if commands[id] is None and ((agent.row, agent.col), agent.rot) in self.camp_locations:
+                commands[id] = Command.MINE
+            else:
+                for ((camp_row, camp_col), camp_rot) in self.camp_locations:
+                    if (agent.row, agent.col) == (camp_row, camp_col):
+                        return agent.calculate_rotation(camp_rot)
+        return commands
+        
     # only explore
     def command(self):
         commands = [None for _ in range(len(self.agents))]
+        commands = self.return_gold(self.agents, commands)
         commands = self.shoot(self.agents, commands)
-        commands = self.explore(self.agents, commands)
+        commands = self.go_to_gold(self.agents, commands)
+        if self.map.count_on_board(Tile.FOG) / (self.map.n ** 2) > (1 / self.n_players) * Bot.EXPLORE:
+            commands = self.explore(self.agents, commands)
         commands = self.default(self.agents, commands)
         return commands
   

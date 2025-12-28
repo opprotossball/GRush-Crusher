@@ -14,11 +14,19 @@ class Map:
         for enemy_base in enemy_bases:
             self.board[enemy_base[0]][enemy_base[1]] = Tile.ENEMY_BASE
         self.agent_board = [[Tile.EMPTY for _ in range(n)] for _ in range(n)]
+        self.cover_board = [[False for _ in range(n)] for _ in range(n)]
 
     @staticmethod
     def dist(cords1, cords2):
         return abs(cords1[0] - cords2[0]) + abs(cords1[1] - cords2[1])
 
+    def count_on_board(self, tile_type):
+        count = 0
+        for _, tile in self.iter():
+            if tile == tile_type:
+                count += 1
+        return count
+        
     def line_cords(self, row, col, rot, dist=None):
         # calculate max dist
         if dist is None:
@@ -74,6 +82,8 @@ class Map:
     def update(self, agents):
         # remove agents from map
         self.agent_board = [[Tile.EMPTY for _ in range(self.n)] for _ in range(self.n)]
+        # reset cover map
+        self.cover_board = [[False for _ in range(self.n)] for _ in range(self.n)]
         # add agents and their visions
         for agent in agents:
             # set agent on agent board
