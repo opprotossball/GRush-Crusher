@@ -8,9 +8,7 @@ class Tile(Enum):
     ALLY = 3
     ENEMY = 4
     GOLD = 5
-    MY_BASE = 6
-    ENEMY_BASE = 7
-    RESERVED = 8
+    RESERVED = 6
 
     @classmethod
     def from_string(cls, s: str):

@@ -8,12 +8,12 @@ import logging
 
 class Bot:
     # 2 - explore whole map
-    EXPLORE = 2
+    EXPLORE = 1.2
     # number of agents gathering gold
-    MINERS = 2
+    MINERS = 5
     CAMPERS = 0.4
     GUARD_PERIMETER = 4
-    LEAVE_PERIMETER = 15
+    LEAVE_PERIMETER = 7
     
     def __init__(self, n, game_length, n_players, my_base, enemy_bases):
         self.n = n
@@ -25,6 +25,11 @@ class Bot:
         self.agents = []
         self.camp_locations = []
         self.current_miners = 0
+        # remove fog near the base
+        for row in range(n):
+            for col in range(n):
+                if self.map.dist((row, col), my_base) <= Bot.LEAVE_PERIMETER and self.map.board[row][col] == Tile.FOG:
+                    self.map.board[row][col] = Tile.EMPTY
         
     def prefered_camp_rotations(self):
         rotations = []
@@ -130,19 +135,40 @@ class Bot:
         return commands
 
     # go to base if holding gold
-    def go_to_gold(self, agents, commands):
-        miners = 0
+    def go_to_gold(self, agents, commands, max_agents=None):
+        gone = 0
         for id, agent in enumerate(agents):
-            if self.current_miners >= Bot.MINERS:
+            if max_agents is not None and gone >= max_agents:
                 break
             if commands[id] is not None or agent.has_gold:
                 continue
             cords, dist = self.map.find_closest(agent.row, agent.col, Tile.GOLD)
             # if cannot find fog command stays None
-            if cords is None:
+            if cords is None or cords == self.my_base:
                 continue
             commands[id] = self.go(agent, cords)
-            miners += 1
+            gone += 1
+        return commands
+    
+    def go_to_closest_golds(self, agents, commands):
+        gone = 0
+        golds = self.map.find_all(Tile.GOLD)
+        golds.sort(key=lambda x: self.map.dist(x, self.my_base))
+        for gold in golds:
+            if gone >= 2 * Bot.MINERS:
+                break
+            best_id = None
+            best_dist = math.inf
+            for id, agent in enumerate(agents):
+                if commands[id] is not None or agent.has_gold:
+                    continue
+                dist = self.map.dist(agent.cords(), gold)
+                if dist < best_dist:
+                    best_id = id
+                    best_dist = dist
+            if best_id is not None:
+                commands[best_id] = self.go(agent, gold)
+                gone += 1
         return commands
     
     # return gold
@@ -166,6 +192,20 @@ class Bot:
             if not agent.has_gold and self.map.board[agent.row][agent.col] == Tile.GOLD:
                 commands[id] = Command.MINE
                 self.current_miners += 1
+        return commands
+    
+    def mine_closest_golds(self, agents, commands):
+        golds = self.map.find_all(Tile.GOLD)
+        golds.sort(key=lambda x: self.map.dist(x, self.my_base))
+        for gold in golds:
+            if self.current_miners >= Bot.MINERS:
+                break
+            for id, agent in enumerate(agents):
+                if commands[id] is not None:
+                    continue
+                if agent.cords() == gold and not agent.has_gold:
+                    commands[id] = Command.MINE
+                    self.current_miners += 1
         return commands
 
     # returns action or None
@@ -197,7 +237,7 @@ class Bot:
             if commands[id] is None:
                 commands[id] = random.choices(
                     [Command.MINE, Command.GO, Command.LEFT, Command.RIGHT, Command.BACK],
-                    weights=[0.0, 0.7, 0.1, 0.1, 0.1],
+                    weights=[0.0, 0.55, 0.15, 0.15, 0.15],
                     k=1,
                 )[0]            
         return commands
@@ -239,7 +279,7 @@ class Bot:
                 continue
             if self.map.dist((agent.row, agent.col), self.my_base) > Bot.LEAVE_PERIMETER:
                 continue
-            if random.random() < 0.8:
+            if random.random() < 0.85:
                 # randomly choose tile to go to - should succed in max few tries
                 for _ in range(10000):
                     target = (random.randint(0, self.map.n-1), random.randint(0, self.map.n-1))
@@ -250,7 +290,7 @@ class Bot:
                 # go randomly
                 commands[id] = random.choices(
                     [Command.GO, Command.LEFT, Command.RIGHT, Command.BACK],
-                    weights=[0.7, 0.1, 0.1, 0.1],
+                    weights=[0.25, 0.25, 0.25, 0.25],
                     k=1,
                 )[0]            
         return commands
@@ -266,16 +306,12 @@ class Bot:
         commands = [None for _ in range(len(self.agents))]
         commands = self.return_gold(self.agents, commands)
         commands = self.shoot(self.agents, commands)
+        if self.map.count_on_board(Tile.FOG) / (self.map.n ** 2) * Bot.EXPLORE > (1 / self.n_players):
+            commands = self.explore(self.agents, commands)
         commands = self.leave_base(self.agents, commands)
         commands = self.mine(self.agents, commands)
         commands = self.go_to_gold(self.agents, commands)
-        if True: #self.map.count_on_board(Tile.FOG) / (self.map.n ** 2) * Bot.EXPLORE > (1 / self.n_players):
-            commands = self.explore(self.agents, commands)
-        # if map is explored, choose camp locations
-        else:
-            # TODO
-            pass
-        # commands = self.leave_base(self.agents, commands)
+        commands = self.explore(self.agents, commands)
         commands = self.default(self.agents, commands)
         return commands
   

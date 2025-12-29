@@ -9,12 +9,10 @@ from queue import Queue
 class Map:
     def __init__(self, n, my_base, enemy_bases):
         self.n = n
+        self.my_base = my_base
+        self.enemy_bases = enemy_bases
         self.board = [[Tile.FOG for _ in range(n)] for _ in range(n)]
-        self.board[my_base[0]][my_base[1]] = Tile.MY_BASE
-        for enemy_base in enemy_bases:
-            self.board[enemy_base[0]][enemy_base[1]] = Tile.ENEMY_BASE
         self.agent_board = [[Tile.EMPTY for _ in range(n)] for _ in range(n)]
-        self.cover_board = [[False for _ in range(n)] for _ in range(n)]
 
     @staticmethod
     def dist(cords1, cords2):
@@ -85,12 +83,10 @@ class Map:
                 result.append(cords)
         return result
     
-    # add agent's vision
+    # add agent's vision & set my base to EMPTY (not GOLD)
     def update(self, agents):
         # remove agents from map
         self.agent_board = [[Tile.EMPTY for _ in range(self.n)] for _ in range(self.n)]
-        # reset cover map
-        self.cover_board = [[False for _ in range(self.n)] for _ in range(self.n)]
         # add agents and their visions
         for agent in agents:
             # set agent on agent board
@@ -108,6 +104,8 @@ class Map:
                 self.agent_board[last_row][last_col] = tile
             else:
                 self.board[last_row][last_col] = tile
+        # set my base to EMPTY
+        self.board[self.my_base[0]][self.my_base[1]] = Tile.EMPTY
 
     def random_cords(self):
         return (random.randint(0, self.n-1), random.randint(0, self.n-1))
@@ -140,7 +138,9 @@ class Map:
             if current == target:
                 break           
             for next in self.adjacent_cords(current):
-                if self.board[next[0]][next[1]] == Tile.WALL: # or self.agent_board[next[0]][next[1]] in [Tile.ALLY, Tile.RESERVED]:
+                if self.board[next[0]][next[1]] == Tile.WALL: 
+                    continue
+                if self.agent_board[next[0]][next[1]] == Tile.ALLY and next != target: 
                     continue
                 if next not in came_from:
                     frontier.put(next)
