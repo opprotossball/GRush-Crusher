@@ -7,8 +7,8 @@ import logging
 
 
 class Bot:
-    # 2 - explore whole map
-    EXPLORE = 1.1
+    # 1 - explore 1/num of players tiles of map
+    EXPLORE = 0.4
     # number of agents gathering gold
     MINERS = 5
     CAMPERS = 0.4
@@ -130,6 +130,7 @@ class Bot:
         for id, agent in enumerate(agents):
             if commands[id] is not None:
                 continue
+            # TODO shoot based on agent map instead of vision
             if agent.vision.tile == Tile.ENEMY and not agent.has_gold:
                 commands[id] = Command.FIRE
         return commands
@@ -309,7 +310,7 @@ class Bot:
         # TODO choose golds to camp on
     
     def should_explore(self):
-        return self.map.count_on_board(Tile.FOG) / (self.map.n ** 2) * Bot.EXPLORE > (1 / self.n_players)
+        return (self.map.count_on_board(Tile.FOG) / (self.map.n ** 2)) * Bot.EXPLORE > (1 / self.n_players)
     
     def command(self):
         commands = [None for _ in range(len(self.agents))]
@@ -317,7 +318,7 @@ class Bot:
         commands = self.shoot(self.agents, commands)
         if self.should_explore():
             commands = self.explore(self.agents, commands)
-        commands = self.leave_base(self.agents, commands)
+        # commands = self.leave_base(self.agents, commands)
         commands = self.mine(self.agents, commands)
         commands = self.go_to_gold(self.agents, commands)
         commands = self.explore(self.agents, commands)

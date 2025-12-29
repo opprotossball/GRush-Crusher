@@ -38,7 +38,7 @@ if __name__ == "__main__":
             for command in commands:
                 print(command.name)
             # print fog coordinates for debug
-            # print_fog()
+            # print_fog(bot)
             sys.stdout.flush()
         except Exception as e:
             logging.exception(e)
