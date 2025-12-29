@@ -7,6 +7,14 @@ from bot import Bot
 from agent import Agent, Vision
 
 
+# for debug
+def print_fog(bot):
+    fogs = bot.map.find_all(Tile.FOG)
+    print(len(fogs))
+    for fog in fogs:
+        print(f"{fog[0]} {fog[1]}")
+
+
 if __name__ == "__main__":
     print("Grush Crusher")
     sys.stdout.flush()
@@ -29,6 +37,8 @@ if __name__ == "__main__":
             commands = bot.command()
             for command in commands:
                 print(command.name)
+            # print fog coordinates for debug
+            # print_fog()
             sys.stdout.flush()
         except Exception as e:
             logging.exception(e)
