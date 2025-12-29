@@ -8,6 +8,8 @@ from agent import Agent, Vision
 
 
 if __name__ == "__main__":
+    print("Grush Crusher")
+    sys.stdout.flush()
     N, GAME_LENGTH = map(int, input().split())
     N_PLAYERS = int(input())
     MY_BASE = tuple(map(int, input().split()))
