@@ -138,6 +138,8 @@ class Bot:
     def go_to_gold(self, agents, commands, max_agents=None):
         gone = 0
         golds = self.map.find_all(Tile.GOLD)
+        if len(golds) == 0:
+            return commands
         for id, agent in enumerate(agents):
             if max_agents is not None and gone >= max_agents:
                 break
