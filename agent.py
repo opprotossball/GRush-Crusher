@@ -9,12 +9,11 @@ class Vision:
     dist: int
 
 class Agent:
-    def __init__(self, row, col, rot, vision, has_gold=False, on_gold=False):
+    def __init__(self, row, col, rot, vision, has_gold=False):
         self.row = row
         self.col = col
         self.rot = rot
         self.has_gold = has_gold
-        self.on_gold = on_gold
         self.vision = vision
 
     def calculate_rotation(self, target_rot):

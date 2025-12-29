@@ -77,7 +77,14 @@ class Map:
                 dist = new_dist
                 target = cords
         return target, dist
-
+    
+    def find_all(self, target_tile):
+        result = []
+        for cords, tile in self.iter():
+            if tile == target_tile:
+                result.append(cords)
+        return result
+    
     # add agent's vision
     def update(self, agents):
         # remove agents from map
@@ -133,7 +140,7 @@ class Map:
             if current == target:
                 break           
             for next in self.adjacent_cords(current):
-                if self.board[next[0]][next[1]] in [Tile.WALL, Tile.ALLY]:
+                if self.board[next[0]][next[1]] == Tile.WALL: # or self.agent_board[next[0]][next[1]] in [Tile.ALLY, Tile.RESERVED]:
                     continue
                 if next not in came_from:
                     frontier.put(next)
