@@ -16,6 +16,9 @@ class Agent:
         self.has_gold = has_gold
         self.vision = vision
 
+    def cords(self):
+        return (self.row, self.col)
+    
     def calculate_rotation(self, target_rot):
         diff = target_rot.value - self.rot.value
         if diff == 0:
