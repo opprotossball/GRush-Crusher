@@ -137,12 +137,16 @@ class Bot:
     # go to base if holding gold
     def go_to_gold(self, agents, commands, max_agents=None):
         gone = 0
+        golds = self.map.find_all(Tile.GOLD)
         for id, agent in enumerate(agents):
             if max_agents is not None and gone >= max_agents:
                 break
             if commands[id] is not None or agent.has_gold:
                 continue
-            cords, dist = self.map.find_closest(agent.row, agent.col, Tile.GOLD)
+            if random.random() < 0.8:
+                cords, _ = self.map.find_closest(agent.row, agent.col, Tile.GOLD)
+            else:
+                cords = random.choice(golds)
             # if cannot find fog command stays None
             if cords is None or cords == self.my_base:
                 continue
