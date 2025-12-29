@@ -8,7 +8,7 @@ import logging
 
 class Bot:
     # 2 - explore whole map
-    EXPLORE = 1.2
+    EXPLORE = 1.1
     # number of agents gathering gold
     MINERS = 5
     CAMPERS = 0.4
@@ -210,7 +210,7 @@ class Bot:
 
     # returns action or None
     def go(self, agent, target):
-        next_step = self.map.bfs((agent.row, agent.col), target)
+        next_step = self.map.bfs((agent.row, agent.col), agent.rot, target)
         if next_step is None:
             return None
         if next_step[0] == agent.row - 1:
@@ -302,11 +302,14 @@ class Bot:
         golds.sort(key=lambda x: 1)
         # TODO choose golds to camp on
     
+    def should_explore(self):
+        return self.map.count_on_board(Tile.FOG) / (self.map.n ** 2) * Bot.EXPLORE > (1 / self.n_players)
+    
     def command(self):
         commands = [None for _ in range(len(self.agents))]
         commands = self.return_gold(self.agents, commands)
         commands = self.shoot(self.agents, commands)
-        if self.map.count_on_board(Tile.FOG) / (self.map.n ** 2) * Bot.EXPLORE > (1 / self.n_players):
+        if self.should_explore():
             commands = self.explore(self.agents, commands)
         commands = self.leave_base(self.agents, commands)
         commands = self.mine(self.agents, commands)

@@ -122,36 +122,69 @@ class Map:
             adjacent.append((cords[0], cords[1] + 1))
         return adjacent
 
+    def adjacent(self, cords, rot):
+        row, col = cords
+        if rot == Rotation.U:
+            row -= 1
+        elif rot == Rotation.R:
+            col += 1
+        elif rot == Rotation.D:
+            row += 1
+        elif rot == Rotation.L:
+            col -= 1
+        if row >= 0 and col >= 0 and row < self.n and col < self.n:
+            return (row, col)
+        return None
+    
     # returns first tile on path or None
     # ignore walls & allies
-    def bfs(self, start, target):
+    def bfs(self, start, start_rot, target):
         if start == target:
             logging.info("bfs target same as start")
             return None
         frontier = Queue()
-        frontier.put(start)
+        frontier.put((start, start_rot))
         came_from = dict()
-        came_from[start] = None
+        came_from[(start, start_rot)] = None
 
         while not frontier.empty():
-            current = frontier.get()
+            # get new frontier
+            current, current_rot = frontier.get()
             if current == target:
                 break           
-            for next in self.adjacent_cords(current):
-                if self.board[next[0]][next[1]] == Tile.WALL: 
+            
+            # go forward
+            next_tile = self.adjacent(current, current_rot)
+            if (next_tile is not None and
+                self.board[next_tile[0]][next_tile[1]] != Tile.WALL and
+                (self.agent_board[next_tile[0]][next_tile[1]] != Tile.ALLY or next_tile == target) and
+                (next_tile, current_rot) not in came_from
+            ):
+                frontier.put((next_tile, current_rot))
+                came_from[(next_tile, current_rot)] = (current, current_rot)
+                
+            # rotate
+            for rot in Rotation:
+                if rot == current_rot:
                     continue
-                if self.agent_board[next[0]][next[1]] == Tile.ALLY and next != target: 
-                    continue
-                if next not in came_from:
-                    frontier.put(next)
-                    came_from[next] = current
-
-        if target not in came_from:
+                if (current, rot) not in came_from:
+                    frontier.put((current, rot))
+                    came_from[(current, rot)] = (current, current_rot)
+                    
+        # check rotation of arrival
+        target_rot = None
+        for rot in Rotation:
+            if (target, rot) in came_from:
+                target_rot = rot
+                break
+        
+        if target_rot is None:
             return None
 
-        current = target
-        while current != start:
-            if came_from[current] == start:
-                return current
+        current = (target, target_rot)
+        while current[0] != start:
+            if came_from[current][0] == start:
+                # return just tile
+                return current[0]
             current = came_from[current]
         raise Exception("Path not reconstructed")
